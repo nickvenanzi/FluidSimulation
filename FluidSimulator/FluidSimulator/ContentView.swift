@@ -8,8 +8,11 @@
 import SwiftUI
 
 struct ContentView: View {
+    
+    var engine = PhysicsEngine()
+    
     var body: some View {
-        MatrixMultiplyView()
+        Text("Empty")
     }
 }
 
