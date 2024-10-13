@@ -24,12 +24,16 @@ kernel void cg_initialization(const device float* A [[buffer(0)]],
     uint z_jmp = 1;
     uint index = gid.x * x_jmp + gid.y * y_jmp + gid.z;
     
-    if (gid.x == 0 || gid.x == g_size.x - 1)
+    if (
+        gid.x == 0 || gid.x == g_size.x - 1 ||
+        gid.y == 0 || gid.y == g_size.y - 1 ||
+        gid.z == 0 || gid.z == g_size.z - 1
+    ) {
+        r[index] = 0;
+        rr[index] = 0;
+        p[index] = 0;
         return;
-    if (gid.y == 0 || gid.y == g_size.y - 1)
-        return;
-    if (gid.z == 0 || gid.z == g_size.z - 1)
-        return;
+    }
     
     float tmp = A[index]*x[index] + AplusI[index]*x[index + x_jmp] + AplusJ[index]*x[index + y_jmp] + AplusK[index]*x[index + z_jmp] + AplusI[index - x_jmp]*x[index - x_jmp] + AplusJ[index - y_jmp]*x[index - y_jmp] + AplusK[index - z_jmp]*x[index - z_jmp];
     float result = b[index] - tmp;
@@ -52,12 +56,15 @@ kernel void cg_iterationStep1(const device float* A [[buffer(0)]],
     uint z_jmp = 1;
     uint index = gid.x * x_jmp + gid.y * y_jmp + gid.z;
     
-    if (gid.x == 0 || gid.x == g_size.x - 1)
+    if (
+        gid.x == 0 || gid.x == g_size.x - 1 ||
+        gid.y == 0 || gid.y == g_size.y - 1 ||
+        gid.z == 0 || gid.z == g_size.z - 1
+    ) {
+        Ap[index] = 0;
+        pAp[index] = 0;
         return;
-    if (gid.y == 0 || gid.y == g_size.y - 1)
-        return;
-    if (gid.z == 0 || gid.z == g_size.z - 1)
-        return;
+    }
     
     float tmp = A[index]*p[index] + AplusI[index]*p[index + x_jmp] + AplusJ[index]*p[index + y_jmp] + AplusK[index]*p[index + z_jmp] + AplusI[index - x_jmp]*p[index - x_jmp] + AplusJ[index - y_jmp]*p[index - y_jmp] + AplusK[index - z_jmp]*p[index - z_jmp];
     Ap[index] = tmp;

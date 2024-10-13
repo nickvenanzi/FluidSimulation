@@ -10,7 +10,7 @@ import Metal
 
 class PhysicsEngine {
     
-    let n: Int = 50
+    let n: Int = 100
     
     var A: [Float]
     var AplusI: [Float]
@@ -82,6 +82,27 @@ class PhysicsEngine {
          */
     }
     
+    func printRR() {
+        let ptr = rBuffer.contents().bindMemory(to: Float.self, capacity: n*n*n)
+        var max: Float = 0
+        for i in 0..<n*n*n {
+            if abs(ptr[i]) > max {
+                max = abs(ptr[i])
+            }
+        }
+        print("Max element: \(max)")
+        let b_ptr = rrOldBuffer.contents().bindMemory(to: Float.self, capacity: 1)
+        print("RR: \(b_ptr[0])\n--------------")
+    }
+    
+    func iterate() {
+        let commandBuffer = commandQueue.makeCommandBuffer()!
+        configureCGIteration(commandBuffer)
+        commandBuffer.commit()
+        commandBuffer.waitUntilCompleted()
+        printRR()
+    }
+    
     func generateData() {
         var index: Int
         for i in 1..<n-1 {
@@ -89,7 +110,7 @@ class PhysicsEngine {
                 for k in 1..<n-1 {
                     index = i*n*n + j*n + k
                     
-                    A[index] = Float.random(in: 0..<1)
+                    A[index] = Float.random(in: 5..<6)
                     AplusI[index] = Float.random(in: 0..<1)
                     AplusJ[index] = Float.random(in: 0..<1)
                     AplusK[index] = Float.random(in: 0..<1)
@@ -125,7 +146,8 @@ class PhysicsEngine {
     func computeX() {
         // set buffers
         setBufferData()
-        
+        let startTime = CFAbsoluteTimeGetCurrent()
+
         // Create a command buffer
         let commandBuffer = commandQueue.makeCommandBuffer()!
         
@@ -133,54 +155,19 @@ class PhysicsEngine {
         configureCGInit(commandBuffer)
         
         // CG Iterations
-        for _ in 0..<10 {
+        for _ in 0..<50 {
             configureCGIteration(commandBuffer)
         }
         
         // Commit the command buffer and wait for completion
-        let startTime = CFAbsoluteTimeGetCurrent()
         commandBuffer.commit()
         commandBuffer.waitUntilCompleted()
+        
         let endTime = CFAbsoluteTimeGetCurrent()
         print("Time: \(endTime - startTime) seconds")
-        // Retrieve the final result from GPU memory
         
-        
-//        let r_ptr = rBuffer.contents().bindMemory(to: Float.self, capacity: n*n*n)
-//        // Now copy the Metal buffer contents back to a Swift array
-//        var r_calc: [Float] = []
-//        for i in 0..<n*n*n {
-//            r_calc.append(r_ptr[i])
-//        }
-//        print(r_calc[n*n*n-10..<n*n*n])
-        let (rr_actual, r_actual) = checkResidual()
-//        print(r_actual[n*n*n-10..<n*n*n])
-            
-        let rrOld_ptr = rrOldBuffer.contents().bindMemory(to: Float.self, capacity: 1)
-        print(rrOld_ptr.pointee)
-        print(rr_actual)
+        printRR()
         return
-    }
-    
-    func checkResidual() -> (Float, [Float]) {
-        // r = b - Ax
-        let x_jmp = n*n
-        let y_jmp = n
-        let z_jmp = 1
-        var residual: Float = 0
-        var rArray: [Float] = Array(repeating: 0, count: n*n*n)
-        for i in 1..<n-1 {
-            for j in 1..<n-1 {
-                for k in 1..<n-1 {
-                    let index = i*n*n + j*n + k
-                    let sum = A[index]*x[index] + AplusI[index]*x[index + x_jmp] + AplusJ[index]*x[index + y_jmp] + AplusK[index]*x[index + z_jmp] + AplusI[index - x_jmp]*x[index - x_jmp] + AplusJ[index - y_jmp]*x[index - y_jmp] + AplusK[index - z_jmp]*x[index - z_jmp]
-                    let result = b[index] - sum
-                    residual += result * result
-                    rArray[index] = result
-                }
-            }
-        }
-        return (residual, rArray)
     }
     
     func configureCGInit(_ commandBuffer: MTLCommandBuffer) {

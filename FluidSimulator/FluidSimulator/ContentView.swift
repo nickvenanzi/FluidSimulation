@@ -10,9 +10,16 @@ import SwiftUI
 struct ContentView: View {
     
     var engine = PhysicsEngine()
+    @State var count = 0
     
     var body: some View {
-        Text("Empty")
+        Button {
+            engine.iterate()
+            count += 1
+        } label: {
+            Text("Iterate: \(count)")
+        }
+
     }
 }
 
